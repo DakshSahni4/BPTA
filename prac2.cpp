@@ -13,8 +13,8 @@ void helper(int i, vector<int> curr, vector<vector<int>> &subsets, vector<int> v
 	}
 
 	curr.push_back(vertices[i]);
-	// cout << vertices[i] << "\n";
 	helper(i + 1, curr, subsets, vertices);
+
 	curr.pop_back();
 	helper(i + 1, curr, subsets, vertices);
 }
@@ -23,7 +23,7 @@ vector<vector<int>> genrateSubsets(int N)
 
 	int i = 0;
 	vector<int> curr = {};
-	vector<vector<int>> subsets = {{}};
+	vector<vector<int>> subsets = {};
 
 	vector<int> vertices = {};
 
@@ -65,7 +65,7 @@ int vertexCover(vector<pair<int, int>> edgeList, int N, vector<int> &ans)
 	for (int i = 0; i < subsets.size(); i++)
 	{
 		int subsetSize = subsets[i].size();
-		if (isVc(subsets[i], edgeList))
+		if (isVc(subsets[i], edgeList) && best> subsetSize)
 		{
 			best = min(best, subsetSize);
 			ans = subsets[i];
@@ -79,7 +79,7 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 	vector<pair<int,int>> edges;
 	set<pair<int,int>>edgesSet;
 
-	srand(time(0));
+	
 
 
 	for(int i = 1;i<n;i++) {
@@ -119,8 +119,7 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 
 	int main()
 	{
-		vector<int> subsets;
-// 		int N = 7;
+		srand(time(0));
 
 		for(int m = 10 ;m<=45;m+=5){
 		    
@@ -152,14 +151,5 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 		cout<<edges.size();cout<<endl;
 		
 		}
-		
-// 		vector<pair<int, int>> edgeList = {
-// 			{0, 1}, {0, 2}, {2, 1}, {1, 3}, {2, 3}, {2, 4}, {3, 4}, {3, 5}, {5, 6}, {6, 1}
-// 		};
-		// cout << vertexCover(edgeList, N, subsets);
-		// cout << endl;
-
-		for (auto i : subsets)
-			cout << i;
 
 	}
