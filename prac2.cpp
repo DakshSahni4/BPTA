@@ -27,10 +27,8 @@ vector<vector<int>> genrateSubsets(int N)
 
 	vector<int> vertices = {};
 
-	for (int i = 0; i < N; i++)
-	{
-		vertices.push_back(i);
-	}
+	for (int j = 0; j < N; j++) vertices.push_back(j);
+
 	helper(i, curr, subsets, vertices);
 
 	return subsets;
@@ -67,7 +65,7 @@ int vertexCover(vector<pair<int, int>> edgeList, int N, vector<int> &ans)
 		int subsetSize = subsets[i].size();
 		if (isVc(subsets[i], edgeList) && best> subsetSize)
 		{
-			best = min(best, subsetSize);
+			best = subsetSize;
 			ans = subsets[i];
 		}
 	}
@@ -76,23 +74,21 @@ int vertexCover(vector<pair<int, int>> edgeList, int N, vector<int> &ans)
 }
 
 vector<pair<int,int>> generateEdges(int n,int m) {
+	
 	vector<pair<int,int>> edges;
 	set<pair<int,int>>edgesSet;
 
-	
-
-
 	for(int i = 1;i<n;i++) {
 		int randomValue = rand() % i;
-			while(randomValue == i);
 
-			int first = min(i,randomValue);
-			int second = max(i,randomValue);
-			if(edgesSet.count({first,second})<= 0 ) {
+		int first = min(i,randomValue);
+		int second = max(i,randomValue);
 
-				edges.push_back({first,second});
-				edgesSet.insert({first,second});
-			}
+		if(edgesSet.count({first,second})<= 0 ) {
+
+			edges.push_back({first,second});
+			edgesSet.insert({first,second});
+		}
 
 		}
 
@@ -116,10 +112,7 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 		return edges;
 
 	}
-
-	int main()
-	{
-		srand(time(0));
+	void datasetGen(){
 
 		for(int m = 10 ;m<=45;m+=5){
 		    
@@ -133,23 +126,17 @@ vector<pair<int,int>> generateEdges(int n,int m) {
             outFile << edge.first << " " << edge.second << "\n";
         
         }
-        outFile<<"vertex Cover"<<"\n";
         
-        vector<int> subsets;
-		
-		vertexCover(edges,10,subsets);
-		
-	for (const auto& node:subsets){
-            outFile << node<<" ";
-        }
-        outFile<<"\n";
-		
-		
         outFile.close();
 		
-		for(auto edge : edges) cout<<edge.first<<" "<<edge.second<<endl;
-		cout<<edges.size();cout<<endl;
-		
 		}
+	}
+	
+	int main()
+	{
+		srand(time(0));
+		datasetGen();
+		
+
 
 	}
