@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include <cstdlib>
 #include <ctime>
+#include <chrono>
 
 using namespace std;
 
@@ -131,12 +132,69 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 		
 		}
 	}
-	
-	int main()
-	{
-		srand(time(0));
-		datasetGen();
-		
 
+	bool loadGraph(const string& filename, vector<pair<int,int>>& edges, int& N) {
+
+    ifstream inFile(filename);
+    if (!inFile.is_open()) return false;
+
+    edges.clear();
+
+    int u, v, maxVertex = -1;
+
+    while (inFile >> u >> v) {
+        edges.emplace_back(u, v);
+        maxVertex = max(maxVertex, max(u, v));
+    }
+
+    inFile.close();
+
+    N = (maxVertex == -1) ? 0 : maxVertex + 1;
+
+    return true;
 
 	}
+	int main() {
+    srand(time(0));
+
+    // datasetGen();
+
+    ofstream csv("results.csv");
+
+    csv << "N,m,cover_size,cover_set,time_microseconds\n";
+
+    for (int m = 10; m <= 45; m += 5) {
+
+        string filename = "graph_m" + to_string(m) + ".txt";
+
+        vector<pair<int,int>> edges;
+        int N;
+
+        if (!loadGraph(filename, edges, N)) continue;
+
+        vector<int> cover;
+
+        auto start = chrono::high_resolution_clock::now();
+        int coverSize = vertexCover(edges, N, cover);
+        auto end = chrono::high_resolution_clock::now();
+
+        auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
+
+        string coverStr;
+
+        for (int i = 0; i < cover.size(); ++i) {
+            coverStr += to_string(cover[i]);
+            if (i != cover.size() - 1) coverStr += " ";
+        }
+
+        csv << N << ","
+            << edges.size() << ","
+            << coverSize << ","
+            << "\"" << coverStr << "\","
+            << duration.count() << "\n";
+    }
+
+    csv.close();
+
+    return 0;
+}
