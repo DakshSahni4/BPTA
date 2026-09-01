@@ -77,7 +77,9 @@ int vertexCover(vector<pair<int, int>> edgeList, int N, vector<int> &ans)
 vector<pair<int,int>> generateEdges(int n,int m) {
 	
 	vector<pair<int,int>> edges;
+
 	set<pair<int,int>>edgesSet;
+
 
 	for(int i = 1;i<n;i++) {
 		int randomValue = rand() % i;
@@ -196,5 +198,7 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 
     csv.close();
 
+	system("python visualization.py");
+	
     return 0;
 }
