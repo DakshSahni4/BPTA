@@ -135,23 +135,20 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 		}
 	}
 
-	bool loadGraph(const string& filename, vector<pair<int,int>>& edges, int& N) {
+	bool loadGraph(const string& filename, vector<pair<int,int>>& edges) {
 
     ifstream inFile(filename);
     if (!inFile.is_open()) return false;
 
     edges.clear();
 
-    int u, v, maxVertex = -1;
+    int u, v;
 
     while (inFile >> u >> v) {
         edges.emplace_back(u, v);
-        maxVertex = max(maxVertex, max(u, v));
     }
 
-    inFile.close();
-
-    N = (maxVertex == -1) ? 0 : maxVertex + 1;
+    inFile.close();
 
     return true;
 
@@ -172,12 +169,12 @@ vector<pair<int,int>> generateEdges(int n,int m) {
         vector<pair<int,int>> edges;
         int N;
 
-        if (!loadGraph(filename, edges, N)) continue;
+        if (!loadGraph(filename, edges)) continue;
 
         vector<int> cover;
 
         auto start = chrono::high_resolution_clock::now();
-        int coverSize = vertexCover(edges, N, cover);
+        int coverSize = vertexCover(edges, 10, cover);
         auto end = chrono::high_resolution_clock::now();
 
         auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
