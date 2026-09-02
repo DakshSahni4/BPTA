@@ -148,7 +148,8 @@ vector<pair<int,int>> generateEdges(int n,int m) {
         edges.emplace_back(u, v);
     }
 
-    inFile.close();
+    inFile.close();
+
 
     return true;
 
@@ -167,7 +168,7 @@ vector<pair<int,int>> generateEdges(int n,int m) {
         string filename = "graph_m" + to_string(m) + ".txt";
 
         vector<pair<int,int>> edges;
-        int N;
+        int N = 10;
 
         if (!loadGraph(filename, edges)) continue;
 
