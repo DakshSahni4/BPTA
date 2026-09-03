@@ -161,7 +161,7 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 
     ofstream csv("results.csv");
 
-    csv << "N,m,cover_size,cover_set,time_microseconds\n";
+    csv << "N,m,cover_size,time_microseconds\n";
 
     for (int m = 10; m <= 45; m += 5) {
 
@@ -180,17 +180,20 @@ vector<pair<int,int>> generateEdges(int n,int m) {
 
         auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
 
-        string coverStr;
+		string coverFileName = "cover_m" + to_string(m) + ".txt";
 
-        for (int i = 0; i < cover.size(); ++i) {
-            coverStr += to_string(cover[i]);
-            if (i != cover.size() - 1) coverStr += " ";
-        }
+		ofstream coverFile(coverFileName);
+
+		for (int vertex : cover) {
+			coverFile << vertex << " ";
+		}
+
+		coverFile << "\n";
+		coverFile.close();
 
         csv << N << ","
             << edges.size() << ","
             << coverSize << ","
-            << "\"" << coverStr << "\","
             << duration.count() << "\n";
     }
 

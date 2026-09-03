@@ -1,22 +1,9 @@
 import os
-import csv
 import networkx as nx
 import matplotlib.pyplot as plt
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-csv_path = os.path.join(script_dir, "results.csv")
 
-cover_data = {}
-with open(csv_path, "r") as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        m = int(row["m"])
-        cover_str = row["cover_set"].strip('"')
-        if cover_str:
-            cover = list(map(int, cover_str.split()))
-        else:
-            cover = []
-        cover_data[m] = cover
 
 for m in range(10, 46, 5):
     graph_file = os.path.join(script_dir, f"graph_m{m}.txt")
@@ -32,8 +19,19 @@ for m in range(10, 46, 5):
                 continue
             u, v = map(int, line.split())
             G.add_edge(u, v)
+    cover_file = os.path.join(
+    script_dir,
+    f"cover_m{m}.txt"
+    )
 
-    vertex_cover = set(cover_data.get(m, []))
+    with open(cover_file, "r") as f:
+        cover_str = f.read().strip()
+
+        if cover_str:
+            vertex_cover = set(map(int, cover_str.split()))
+        else:
+            vertex_cover = set()
+
     pos = nx.spring_layout(G, seed=42)
     normal = set(G.nodes()) - vertex_cover
 
