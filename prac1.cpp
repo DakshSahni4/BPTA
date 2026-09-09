@@ -5,7 +5,7 @@
 
 using namespace std;
 
-void helper(int i, vector<int> curr, vector<vector<int>> &subsets, vector<int> vertices)
+void helper(int i, vector<int> curr, vector<vector<int>> &subsets, vector<int>& vertices)
 {
 	if (i == vertices.size())
 	{
@@ -23,10 +23,10 @@ vector<vector<int>> genrateSubsets(int N)
 {
 
 	int i = 0;
-	vector<int> curr = {};
-	vector<vector<int>> subsets = {};
+	vector<int> curr;
+	vector<vector<int>> subsets;
 
-	vector<int> vertices = {};
+	vector<int> vertices ;
 
 	for (int j = 0; j < N; j++) vertices.push_back(j);
 
@@ -35,7 +35,7 @@ vector<vector<int>> genrateSubsets(int N)
 	return subsets;
 }
 
-bool checkinsubset(int u, vector<int> subset)
+bool checkinsubset(int u, vector<int>& subset)
 {
 	for (auto i : subset)
 		if (u == i)
@@ -44,7 +44,7 @@ bool checkinsubset(int u, vector<int> subset)
 	return false;
 }
 
-bool isVc(vector<int> subset, vector<pair<int, int>> edgeList)
+bool isVc(vector<int>& subset, vector<pair<int, int>>& edgeList)
 {
 	for (auto edge : edgeList)
 	{
@@ -53,7 +53,7 @@ bool isVc(vector<int> subset, vector<pair<int, int>> edgeList)
 	}
 	return true;
 }
-int vertexCover(vector<pair<int, int>> edgeList, int N, vector<int> &ans)
+int vertexCover(vector<pair<int, int>>& edgeList, int N, vector<int> &ans)
 {
 
 	vector<vector<int>> subsets;
@@ -175,7 +175,7 @@ vector<pair<int,int>> generateEdges(int n,int m) {
         vector<int> cover;
 
         auto start = chrono::high_resolution_clock::now();
-        int coverSize = vertexCover(edges, 10, cover);
+        int coverSize = vertexCover(edges, N, cover);
         auto end = chrono::high_resolution_clock::now();
 
         auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
