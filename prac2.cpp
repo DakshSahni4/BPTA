@@ -4,7 +4,7 @@ using namespace std;
 
 vector<int> approximation(vector<pair<int,int>>& edges,int N,vector<pair<int,int>>& matching){
     unordered_set<int> visited;
-    for( auto edge : edges){
+    for( auto& edge : edges){
         int u = edge.first;
         int v = edge.second;
 
@@ -160,5 +160,6 @@ int main() {
 
     cout << "\nresults.csv updated successfully\n";
 
+    system("python aprox_visualization.py");
     return 0;
 }
