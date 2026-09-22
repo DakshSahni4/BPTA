@@ -2,3 +2,12 @@ BFA Vertex Cover:
 0 1 3 6 7 8 9 10 11 13 16 18 19 
 Aproximation Vertex Cover:
 19 4 18 0 1 2 15 3 5 8 9 11 6 12 10 17 
+Matching:
+0 1
+2 3
+5 8
+9 11
+6 12
+10 15
+17 18
+4 19

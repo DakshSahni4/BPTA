@@ -220,7 +220,12 @@ int main(){
         vcFile << "Aproximation Vertex Cover:" << endl;
         for (auto& node : aproxVc) vcFile << node << " ";
 
+        vcFile<<endl;
+
+        vcFile << "Matching:" << endl;
+        for (auto& edge : matching) vcFile << edge.first << " " << edge.second << endl;
         vcFile.close();
+
 
         csv << n << ","
             << edges.size() << ","
@@ -237,5 +242,5 @@ int main(){
 
     csv.close();
 
-	system("python aprox_visualization.py");
+	system("python visualization_p3.py");
 }
