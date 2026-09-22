@@ -131,72 +131,111 @@ vector<int> approximation(vector<pair<int,int>>& edges,int N,vector<pair<int,int
     for(auto vertex : visited) aproximateVc.push_back(vertex);
     return aproximateVc;
 }
+vector<int> getMValues() {
+    vector<int> mValues;
+    for (int m = 20; m <= 180; m += 20) mValues.push_back(m);
+    mValues.push_back(190);
+    return mValues;
+}
+
+void datasetGen(int n) {
+    for (int m : getMValues()) {
+        vector<pair<int,int>> edges = generateEdges(n,m);
+
+        string filename = "graph_n" + to_string(n) + "_m" + to_string(m) + ".txt";
+        ofstream outFile(filename);
+        for (const auto& edge : edges) outFile << edge.first << " " << edge.second << "\n";
+        outFile.close();
+    }
+}
+
+bool loadGraph(const string& filename, vector<pair<int,int>>& edges) {
+    ifstream inFile(filename);
+    if (!inFile.is_open()) return false;
+
+    edges.clear();
+    int u, v;
+    while (inFile >> u >> v) edges.emplace_back(u, v);
+
+    inFile.close();
+    return true;
+}
+
+bool fileExists(const string& filename) {
+    ifstream f(filename);
+    return f.good();
+}
+
 int main(){
     srand(time(0));
 
     int n = 20;
-    int maxM = n*(n-1)/2;
-    int m = rand() % maxM;
-    m++;
 
-    vector<pair<int,int>> edges = generateEdges(n,m);
+    string firstFile = "graph_n" + to_string(n) + "_m20.txt";
+    if (!fileExists(firstFile)) {
+        cout << "Dataset not found, generating " << endl;
+        datasetGen(n);
+    } else {
+        cout << "Dataset already exists, loading existing graphs" << endl;
+    }
 
-    vector<int> bfaVC;
+    ofstream csv("p3_results.csv");
+    csv << "N,m,cover_size,time_microseconds,"
+        << "approximate_cover_size,"
+        << "approximation_factor,approx_time_microseconds\n";
 
-    auto startBfa = chrono::high_resolution_clock::now();
-    int bfaVcSize =  vertexCover(edges,n,bfaVC);
-    auto endBfa = chrono::high_resolution_clock::now();
+    for (int m : getMValues()) {
 
-	auto durationBfa = chrono::duration_cast<chrono::microseconds>(endBfa - startBfa).count();
-    
-    vector<pair<int,int>> matching;
-	
-    auto startAprox = chrono::high_resolution_clock::now();
-    vector<int> aproxVc = approximation(edges,n,matching);
-	auto endAprox = chrono::high_resolution_clock::now();
-	
-    int aproxVcSize = aproxVc.size();
+        string filename = "graph_n" + to_string(n) + "_m" + to_string(m) + ".txt";
 
-	auto durationAprox = chrono::duration_cast<chrono::microseconds>(endAprox - startAprox).count();
-    double aproxFactor = (double) aproxVcSize / bfaVcSize;
+        vector<pair<int,int>> edges;
+        if (!loadGraph(filename, edges)) continue;
 
-	string filename = "graph_n" + to_string(n) + ".txt";
+        vector<int> bfaVC;
 
-    ofstream outFile(filename);
+        auto startBfa = chrono::high_resolution_clock::now();
+        int bfaVcSize = vertexCover(edges,n,bfaVC);
+        auto endBfa = chrono::high_resolution_clock::now();
 
-	for (const auto& edge : edges) outFile << edge.first << " " << edge.second << "\n";
+        auto durationBfa = chrono::duration_cast<chrono::microseconds>(endBfa - startBfa).count();
 
-	outFile.close();
+        vector<pair<int,int>> matching;
 
-	filename = "vertex_cover_n" + to_string(n) + ".txt";
+        auto startAprox = chrono::high_resolution_clock::now();
+        vector<int> aproxVc = approximation(edges,n,matching);
+        auto endAprox = chrono::high_resolution_clock::now();
 
-	ofstream vcFile(filename);
+        int aproxVcSize = aproxVc.size();
 
-	vcFile<<"BFA Vertex Cover:"<<endl;
+        auto durationAprox = chrono::duration_cast<chrono::microseconds>(endAprox - startAprox).count();
+        double aproxFactor = (double) aproxVcSize / bfaVcSize;
 
-	for(auto& node : bfaVC) vcFile<<node<<" ";
-	vcFile<<endl;
+        string vcFilename = "vertex_cover_n" + to_string(n) + "_m" + to_string(m) + ".txt";
+        ofstream vcFile(vcFilename);
 
-	vcFile<<"Aproximation Vertex Cover:"<<endl;
+        vcFile << "BFA Vertex Cover:" << endl;
+        for (auto& node : bfaVC) vcFile << node << " ";
+        vcFile << endl;
 
-	for(auto& node : aproxVc) vcFile<<node<<" ";
+        vcFile << "Aproximation Vertex Cover:" << endl;
+        for (auto& node : aproxVc) vcFile << node << " ";
 
-	vcFile.close();
+        vcFile.close();
 
-	ofstream csv("p3_results.csv");
+        csv << n << ","
+            << edges.size() << ","
+            << bfaVcSize << ","
+            << durationBfa << ","
+            << aproxVcSize << ","
+            << fixed << setprecision(2)
+            << aproxFactor << ","
+            << durationAprox
+            << "\n";
 
-	csv << "N,m,cover_size,time_microseconds,"
-           << "approximate_cover_size,"
-           << "approximation_factor,approx_time_microseconds\n";
+        cout << "Done m=" << m << endl;
+    }
 
-	csv << n << ","
-               << m << ","
-               << bfaVcSize << ","
-               << durationBfa << ","
-               << aproxVcSize << ","
-               << fixed << setprecision(2)
-               << aproxFactor << ","
-               << durationAprox
-               << "\n";
-	csv.close();
+    csv.close();
+
+	system("python aprox_visualization.py");
 }
