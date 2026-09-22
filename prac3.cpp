@@ -183,7 +183,7 @@ int main(){
 
 	vcFile.close();
 
-	ofstream csv("Aprox_results.csv");
+	ofstream csv("p3_results.csv");
 
 	csv << "N,m,cover_size,time_microseconds,"
            << "approximate_cover_size,"
