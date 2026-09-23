@@ -9,7 +9,7 @@ m_values = list(range(20, 181, 20)) + [190]
 
 
 def parse_cover_file(filepath):
-    """Parses a vertex_cover file with BFA, Approximation, and Matching sections."""
+    
     bfa_cover = set()
     aprox_cover = set()
     matching_edges = []
@@ -66,11 +66,9 @@ for m in m_values:
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 7))
 
-    # --- BFA subplot ---
     bfa_normal = set(G.nodes()) - bfa_cover
     ax = axes[0]
 
-    # edges drawn first so nodes sit cleanly on top
     nx.draw_networkx_edges(G, pos, width=1.5, edge_color="gray", alpha=0.7, ax=ax)
     nx.draw_networkx_nodes(G, pos, nodelist=list(bfa_normal), node_color="lightblue", node_size=500, ax=ax)
     nx.draw_networkx_nodes(G, pos, nodelist=list(bfa_cover), node_color="red", node_size=500, ax=ax)
@@ -78,17 +76,13 @@ for m in m_values:
     ax.set_title(f"BFA Vertex Cover (size {len(bfa_cover)})")
     ax.axis("off")
 
-    # --- Approximation subplot (with matching highlighted) ---
     aprox_normal = set(G.nodes()) - aprox_cover
     ax = axes[1]
 
-    # draw all graph edges lightly first
     nx.draw_networkx_edges(G, pos, width=1.0, edge_color="gray", alpha=0.5, ax=ax)
 
-    # highlight the matching edges on top, thicker and green
     nx.draw_networkx_edges(G, pos, edgelist=matching_edges, width=3.5, edge_color="green", ax=ax)
 
-    # nodes drawn after edges so they sit on top and stay crisp
     nx.draw_networkx_nodes(G, pos, nodelist=list(aprox_normal), node_color="lightblue", node_size=500, ax=ax)
     nx.draw_networkx_nodes(G, pos, nodelist=list(aprox_cover), node_color="orange", node_size=500, ax=ax)
 
