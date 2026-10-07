@@ -1,57 +1,128 @@
 import csv
 import time
 import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
 from scipy.optimize import linprog
+
 
 def read_graph(filename):
     edges = []
+
     with open(filename, "r") as file:
         for line in file:
             if line.strip():
                 u, v = map(int, line.split())
                 edges.append((u, v))
+
     return edges
+
+
 def read_greedy_results(filename):
     results = {}
+
     with open(filename, "r", newline="") as file:
         reader = csv.DictReader(file)
+
         for row in reader:
             m = int(row["m"])
+
             results[m] = {
                 "size": int(row["approximate_cover_size"]),
                 "time": int(row["approx_time_microseconds"])
             }
+
     return results
 
 
 def solve_lp(n, edges):
-    # print(n)
     objective = np.ones(n)
+
     A = []
     b = []
+
     for u, v in edges:
         row = [0] * n
         row[u] = -1
         row[v] = -1
+
         A.append(row)
         b.append(-1)
+
     start = time.perf_counter()
+
     result = linprog(
         objective,
-        A_ub=A ,
-        b_ub=b ,
+        A_ub=A,
+        b_ub=b,
         bounds=[(0, 1)] * n,
         method="highs"
     )
+
     lp_optimal = result.fun
+
     rounded_cover = []
+
     for v in range(n):
-        print(result.x[v],v)
         if result.x[v] >= 0.5:
             rounded_cover.append(v)
+
     total_time = time.perf_counter() - start
+
     return lp_optimal, rounded_cover, total_time
 
+def visualize_lp_cover(n, m, edges, rounded_cover):
+    graph = nx.Graph()
+
+    graph.add_nodes_from(range(n))
+    graph.add_edges_from(edges)
+
+    pos = nx.spring_layout(graph, seed=42)
+
+    normal_vertices = []
+
+    for v in graph.nodes:
+        if v not in rounded_cover:
+            normal_vertices.append(v)
+
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        nodelist=normal_vertices,
+        node_color="lightblue",
+        node_size=500
+    )
+
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        nodelist=rounded_cover,
+        node_color="red",
+        node_size=500
+    )
+
+    nx.draw_networkx_edges(
+        graph,
+        pos
+    )
+
+    nx.draw_networkx_labels(
+        graph,
+        pos
+    )
+
+    plt.title(
+        f"LP Rounded Vertex Cover - n={n}, m={m}, "
+        f"Cover Size={len(rounded_cover)}"
+    )
+
+    plt.savefig(
+        f"lp_{n}_{m}.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    plt.close()
 
 def main():
     experiments = [
@@ -68,11 +139,13 @@ def main():
             "graph_n20_m{}.txt"
         )
     ]
+
     output = open(
         "practical4_results.csv",
         "w",
         newline=""
     )
+
     columns = [
         "n",
         "m",
@@ -83,12 +156,15 @@ def main():
         "LP Rounded VC Size",
         "Approximation Factor"
     ]
+
     writer = csv.DictWriter(
         output,
         fieldnames=columns
     )
 
     writer.writeheader()
+
+    lp_covers = {}
 
     for n, m_values, greedy_file, graph_pattern in experiments:
 
@@ -103,11 +179,16 @@ def main():
             greedy_size = greedy_results[m]["size"]
             greedy_time = greedy_results[m]["time"]
 
-            lp_optimal, rounded_cover, lp_time = solve_lp(n,edges)
+            lp_optimal, rounded_cover, lp_time = solve_lp(
+                n,
+                edges
+            )
+
+            lp_covers[(n, m)] = rounded_cover
 
             rounded_size = len(rounded_cover)
 
-            greedy_factor = (greedy_size / lp_optimal)
+            greedy_factor = greedy_size / lp_optimal
 
             writer.writerow({
                 "n": n,
@@ -126,7 +207,17 @@ def main():
                 )
             })
 
+            visualize_lp_cover(
+                n,
+                m,
+                edges,
+                rounded_cover
+            )
+
     output.close()
 
+    return lp_covers
+
+
 if __name__ == "__main__":
-    main()
+    lp_covers = main()
