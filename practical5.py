@@ -92,9 +92,9 @@ def run_toy():
     plt.savefig(os.path.join(script_dir, "kcenter_toy.png"), dpi=150)
     plt.close()
 
-    return [["Toy", len(pts), 2, k, round(c_lib, 3), round(t_lib, 1),
+    return [["Toy", k, round(c_lib, 3), round(t_lib, 1),
              round(c_gr, 3), round(t_gr, 1), round(c_gr / c_lib, 2)],
-            ["Random", len(rp), 2, 3, round(c1, 3), round(t1, 1),
+            ["Random", 3, round(c1, 3), round(t1, 1),
              round(c2, 3), round(t2, 1), round(c2 / c1, 2)]]
 
 
@@ -112,21 +112,21 @@ def run_real(rows):
         for k in k_values:
             _, c_lib, t_lib = library_heuristic(X, k)
             _, c_gr, t_gr = greedy_kcenter(X, k)
-            rows.append([name, X.shape[0], X.shape[1], k,
+            rows.append([name, k,
                          round(c_lib, 3), round(t_lib, 1),
                          round(c_gr, 3), round(t_gr, 1), round(c_gr / c_lib, 2)])
 
-    with open(os.path.join(script_dir, "p4_results.csv"), "w", newline="") as f:
+    with open(os.path.join(script_dir, "p5_results.csv"), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["dataset", "N", "dim", "k", "kmeans_cost", "kmeans_time_microseconds",
+        w.writerow(["dataset", "k", "kmeans_cost", "kmeans_time_microseconds",
                     "greedy_cost", "greedy_time_microseconds", "greedy_over_kmeans_cost"])
         w.writerows(rows)
 
-    sub = [r for r in rows if r[3] == 5 and r[0] not in ("Toy", "Random")]
+    sub = [r for r in rows if r[1] == 5 and r[0] not in ("Toy", "Random")]
     x = np.arange(len(sub))
     plt.figure(figsize=(8, 5))
-    plt.bar(x - 0.2, [r[4] for r in sub], 0.4, label="KMeans (library)")
-    plt.bar(x + 0.2, [r[6] for r in sub], 0.4, label="Greedy 2-approx")
+    plt.bar(x - 0.2, [r[2] for r in sub], 0.4, label="KMeans (library)")
+    plt.bar(x + 0.2, [r[4] for r in sub], 0.4, label="Greedy 2-approx")
     plt.xticks(x, [r[0] for r in sub])
     plt.ylabel("k-center cost")
     plt.title("Cost on real datasets, k=5")
