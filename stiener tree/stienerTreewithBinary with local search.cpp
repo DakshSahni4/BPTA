@@ -6,17 +6,17 @@
 using namespace std;
 
 const int INF = 1000000000;
-const int MIN_N = 10;            // smallest vertex count the search will try
-const int MAX_N = 40;            // largest vertex count the search will try
+const int MIN_N = 10;
+const int MAX_N = 40;
 
-double TIME_LIMIT_SEC = 10.0;     // "brute force runs" = finishes within this time
+double TIME_LIMIT_SEC = 10.0;
+double M_FACTOR = 2.0;
 
 struct WEdge
 {
 	int u, v, w;
 };
 
-// state used to stop the brute force when the time limit is hit
 chrono::steady_clock::time_point searchStart;
 bool timedOut = false;
 unsigned long long leafCounter = 0;
@@ -27,12 +27,7 @@ bool timeExceeded()
 	return elapsed > TIME_LIMIT_SEC;
 }
 
-// ---------------------------------------------------------------
-// Subset generation by recursion: every subset of `vertices`.
-// Nothing is stored: at each leaf the subset is handed straight to
-// `evaluate` (Kruskal) and then dropped, so memory stays tiny.
-// ---------------------------------------------------------------
-void evaluateSubset(const vector<int> &subset);   // defined after Kruskal
+void evaluateSubset(const vector<int> &subset);
 
 void helper(int i, vector<int> curr, vector<int> &vertices)
 {
@@ -53,18 +48,12 @@ void helper(int i, vector<int> curr, vector<int> &vertices)
 	helper(i + 1, curr, vertices);
 }
 
-// ---------------------------------------------------------------
-// Union-Find for Kruskal
-// ---------------------------------------------------------------
 int findSet(vector<int> &parent, int x)
 {
 	if (parent[x] == x) return x;
 	return parent[x] = findSet(parent, parent[x]);
 }
 
-// Kruskal on the subgraph induced by the vertices marked in inSet.
-// Goes through every edge. Returns the MST cost, or INF if the
-// induced subgraph is not connected.
 int inducedMst(int N, vector<WEdge> &sortedEdges, vector<bool> &inSet, int setSize, vector<WEdge> &used)
 {
 	vector<int> parent(N);
@@ -93,13 +82,6 @@ int inducedMst(int N, vector<WEdge> &sortedEdges, vector<bool> &inSet, int setSi
 	return cost;
 }
 
-// ---------------------------------------------------------------
-// Exact solution (brute force).
-// Every subset of the non-terminals is tried as the Steiner vertices:
-// take the MST of (terminals + subset) and keep the cheapest one.
-// Returns 0 = finished, 1 = time limit hit.
-// ---------------------------------------------------------------
-// state shared with evaluateSubset (called from the recursion)
 int gN = 0, gK = 0, gBest = INF;
 vector<WEdge> *gSorted = nullptr;
 vector<int> *gTerminals = nullptr;
@@ -160,9 +142,6 @@ int steinerExact(int N, vector<WEdge> &edges, vector<int> &terminals,
 	return timedOut ? 1 : 0;
 }
 
-// ---------------------------------------------------------------
-// Approximation: MST of the metric closure, then merge shortest paths
-// ---------------------------------------------------------------
 int steinerApprox(int N, vector<WEdge> &edges, vector<int> &terminals, vector<WEdge> &result)
 {
 	int K = terminals.size();
@@ -194,8 +173,6 @@ int steinerApprox(int N, vector<WEdge> &edges, vector<int> &terminals, vector<WE
 					nxt[i][j] = nxt[i][k];
 				}
 
-	// Prim on the metric closure; `order` lists terminals as they join,
-	// so a parent always comes before its children.
 	vector<int> par(K, -1), key(K, INF), order;
 	vector<bool> done(K, false);
 	key[0] = 0;
@@ -220,7 +197,6 @@ int steinerApprox(int N, vector<WEdge> &edges, vector<int> &terminals, vector<WE
 		}
 	}
 
-	// Add only the part of each shortest path that is not in the tree yet
 	vector<bool> inTree(N, false);
 	inTree[terminals[0]] = true;
 
@@ -258,11 +234,6 @@ int steinerApprox(int N, vector<WEdge> &edges, vector<int> &terminals, vector<WE
 	return cost;
 }
 
-// ---------------------------------------------------------------
-// Heuristic: Local Search
-// A tree is represented by its vertex set. Any vertex set is turned
-// into a tree by: induced MST (Kruskal) -> prune non-terminal leaves.
-// ---------------------------------------------------------------
 void allPairsShortestPaths(int N, vector<WEdge> &edges, vector<vector<int>> &d, vector<vector<int>> &nxt)
 {
 	d.assign(N, vector<int>(N, INF));
@@ -289,8 +260,6 @@ void allPairsShortestPaths(int N, vector<WEdge> &edges, vector<vector<int>> &d, 
 				}
 }
 
-// vertex set -> valid Steiner tree (induced MST, then prune useless leaves).
-// Returns false if the set does not induce a connected subgraph.
 bool buildTree(int N, vector<WEdge> &sortedEdges, vector<bool> &isTerm, vector<bool> &inSet,
                vector<WEdge> &tree, int &cost)
 {
@@ -345,8 +314,6 @@ bool buildTree(int N, vector<WEdge> &sortedEdges, vector<bool> &isTerm, vector<b
 	return true;
 }
 
-// Connect all components of the kept vertices with shortest paths
-// (repeatedly joins the two closest different components).
 void reconnect(int N, vector<vector<int>> &d, vector<vector<int>> &nxt,
                vector<bool> &keep, const vector<WEdge> &remEdges)
 {
@@ -389,13 +356,11 @@ void reconnect(int N, vector<vector<int>> &d, vector<vector<int>> &nxt,
 
 struct KeyPath
 {
-	int a, b;                          // key-vertex endpoints
-	vector<int> interior;              // degree-2 Steiner vertices between them
-	set<pair<int, int>> edgeSet;       // edges of the path (u < v)
+	int a, b;
+	vector<int> interior;
+	set<pair<int, int>> edgeSet;
 };
 
-// Key vertices = terminals and Steiner vertices of degree >= 3.
-// Key path = path between two key vertices whose inner vertices are not key.
 vector<KeyPath> findKeyPaths(int N, vector<WEdge> &tree, vector<bool> &isTerm, vector<int> &deg)
 {
 	vector<vector<int>> adj(N);
@@ -431,15 +396,12 @@ vector<KeyPath> findKeyPaths(int N, vector<WEdge> &tree, vector<bool> &isTerm, v
 			}
 			p.b = cur;
 
-			if (p.a < p.b) paths.push_back(p);   // every path is found from both ends, keep one
+			if (p.a < p.b) paths.push_back(p);
 		}
 	}
 	return paths;
 }
 
-// Local search: Vertex Insertion, Vertex Elimination, Key-Path Exchange and
-// Key-Vertex Elimination. Takes the best valid candidate each round and
-// moves to it only if it is strictly cheaper.
 int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
                        vector<WEdge> &result, int &iterations, int maxIterations = 1000)
 {
@@ -453,7 +415,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 	vector<vector<int>> d, nxt;
 	allPairsShortestPaths(N, edges, d, nxt);
 
-	// 1. initial tree from shortest paths
 	vector<WEdge> init;
 	steinerApprox(N, edges, terminals, init);
 
@@ -465,7 +426,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 	int costT = INF;
 	buildTree(N, sortedEdges, isTerm, inSet, T, costT);
 
-	// 2-3. improve until no candidate is better
 	iterations = 0;
 	while (iterations < maxIterations)
 	{
@@ -489,7 +449,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 			}
 		};
 
-		// Vertex Insertion
 		for (int v = 0; v < N; v++)
 		{
 			if (inT[v]) continue;
@@ -498,7 +457,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 			consider(s);
 		}
 
-		// Vertex Elimination
 		for (int v = 0; v < N; v++)
 		{
 			if (!inT[v] || isTerm[v]) continue;
@@ -510,8 +468,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 		vector<int> deg;
 		vector<KeyPath> kp = findKeyPaths(N, T, isTerm, deg);
 
-		// Key-Path Exchange: drop a key path, reconnect the two halves
-		// with the shortest connection between them
 		for (auto &p : kp)
 		{
 			vector<bool> s = inT;
@@ -525,8 +481,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 			consider(s);
 		}
 
-		// Key-Vertex Elimination: drop a Steiner key vertex together with all
-		// its key paths, reconnect the pieces with shortest paths
 		for (int v = 0; v < N; v++)
 		{
 			if (!inT[v] || isTerm[v] || deg[v] < 3) continue;
@@ -550,7 +504,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 			consider(s);
 		}
 
-		// accept only if strictly better, otherwise stop
 		if (bestCost < costT)
 		{
 			T = bestTree;
@@ -564,9 +517,6 @@ int steinerLocalSearch(int N, vector<WEdge> &edges, vector<int> &terminals,
 	return costT;
 }
 
-// ---------------------------------------------------------------
-// Random instance generation
-// ---------------------------------------------------------------
 vector<WEdge> generateEdges(int n, int m)
 {
 	vector<WEdge> edges;
@@ -574,7 +524,6 @@ vector<WEdge> generateEdges(int n, int m)
 
 	m = min(m, n * (n - 1) / 2);
 
-	// random spanning tree first, so the graph is always connected
 	for (int i = 1; i < n; i++)
 	{
 		int randomValue = rand() % i;
@@ -627,10 +576,6 @@ void writeEdges(const string &filename, vector<WEdge> &tree)
 	out.close();
 }
 
-// ---------------------------------------------------------------
-// One probe of the binary search: random m and K for the given N.
-// Returns true if the brute force finished within the limits.
-// ---------------------------------------------------------------
 int probeCounter = 0;
 
 bool runProbe(int N, ofstream &log)
@@ -639,9 +584,11 @@ bool runProbe(int N, ofstream &log)
 	string id = to_string(probeCounter);
 
 	int maxM = N * (N - 1) / 2;
-	int m = (N - 1) + rand() % (maxM - (N - 1) + 1);   // random in [N-1, N(N-1)/2]
 
-	int K = max(2, N / 4);                             // terminal count tied to N/4 (never below 2)
+	int m = (int)(M_FACTOR * N);
+	m = max(N - 1, min(m, maxM));
+
+	int K = max(2, N / 4);
 
 	vector<WEdge> edges = generateEdges(N, m);
 	vector<int> terminals = generateTerminals(N, K);
@@ -653,7 +600,6 @@ bool runProbe(int N, ofstream &log)
 	termFile << "\n";
 	termFile.close();
 
-	// exact
 	vector<WEdge> optTree;
 	int optCost = INF;
 	unsigned long long checked = 0;
@@ -665,7 +611,6 @@ bool runProbe(int N, ofstream &log)
 
 	bool ok = (status == 0);
 
-	// approximation
 	vector<WEdge> approxTree;
 
 	start = chrono::high_resolution_clock::now();
@@ -673,7 +618,6 @@ bool runProbe(int N, ofstream &log)
 	end = chrono::high_resolution_clock::now();
 	auto approxTime = chrono::duration_cast<chrono::microseconds>(end - start);
 
-	// heuristic (local search, starts from the shortest-path tree)
 	vector<WEdge> heurTree;
 	int localIters = 0;
 
@@ -712,21 +656,88 @@ bool runProbe(int N, ofstream &log)
 	return ok;
 }
 
+// ---------------------------------------------------------------------------
+// Large-instance benchmark: approx + local search only (no brute force, no
+// graph/tree dumps, no visualization). Results go to its own CSV.
+// ---------------------------------------------------------------------------
+struct LargeConfig
+{
+	int N, m, K;
+};
+
+const char *LARGE_CSV = "large_results.csv";
+
+void runLargeBenchmarks()
+{
+	vector<LargeConfig> configs = {
+		{120, 360, 10},
+		{150, 600, 15},
+		{200, 800, 20},
+		{250, 1250, 25},
+		{300, 1200, 30},
+		{400, 2000, 40},
+	};
+
+	ofstream out(LARGE_CSV);
+	out << "N,m,K,approx_cost,heur_cost,approx_over_heur,improvement_pct,"
+	       "approx_time_ms,heur_time_ms,heur_iterations\n";
+
+	printf("\n=== Large instances (approx + local search only) ===\n");
+
+	for (auto &c : configs)
+	{
+		int maxM = c.N * (c.N - 1) / 2;
+		int m = max(c.N - 1, min(c.m, maxM));
+
+		vector<WEdge> edges = generateEdges(c.N, m);
+		vector<int> terminals = generateTerminals(c.N, c.K);
+
+		vector<WEdge> approxTree, heurTree;
+
+		auto start = chrono::high_resolution_clock::now();
+		int approxCost = steinerApprox(c.N, edges, terminals, approxTree);
+		auto end = chrono::high_resolution_clock::now();
+		double approxMs = chrono::duration<double, milli>(end - start).count();
+
+		int iters = 0;
+		start = chrono::high_resolution_clock::now();
+		int heurCost = steinerLocalSearch(c.N, edges, terminals, heurTree, iters);
+		end = chrono::high_resolution_clock::now();
+		double heurMs = chrono::duration<double, milli>(end - start).count();
+
+		double factor = heurCost > 0 ? (double)approxCost / heurCost : -1.0;
+		double improvement = approxCost > 0 ? 100.0 * (approxCost - heurCost) / approxCost : 0.0;
+
+		out << c.N << "," << edges.size() << "," << c.K << ","
+		    << approxCost << "," << heurCost << ","
+		    << fixed << setprecision(3) << factor << ","
+		    << setprecision(1) << improvement << ","
+		    << approxMs << "," << heurMs << "," << iters << "\n";
+		out.flush();
+
+		printf("N=%d m=%zu K=%d -> approx=%d (%.1f ms)  heur=%d (%.1f ms, %d iters)  factor=%.3f  improvement=%.1f%%\n",
+		       c.N, edges.size(), c.K, approxCost, approxMs, heurCost, heurMs, iters, factor, improvement);
+	}
+
+	out.close();
+	printf("Saved %s\n", LARGE_CSV);
+}
+
 int main(int argc, char **argv)
 {
 	unsigned seed = (argc >= 2) ? (unsigned)atoi(argv[1]) : (unsigned)time(0);
 	if (argc >= 3) TIME_LIMIT_SEC = atof(argv[2]);
+	if (argc >= 4) M_FACTOR = atof(argv[3]);
 
 	srand(seed);
-	printf("seed=%u  time limit=%.1f s  search range N in [%d, %d]  K = max(2, N/4)\n\n",
-	       seed, TIME_LIMIT_SEC, MIN_N, MAX_N);
+	printf("seed=%u  time limit=%.1f s  m = %.1f*N  search range N in [%d, %d]  K = max(2, N/4)\n\n",
+	       seed, TIME_LIMIT_SEC, M_FACTOR, MIN_N, MAX_N);
 
 	ofstream log("search_log.csv");
 	log << "probe,N,m,K,status,opt_cost,approx_cost,heur_cost,approx_ratio,heur_ratio,"
 	       "exact_time_us,approx_time_us,heur_time_us,"
 	       "subsets_checked,subsets_total\n";
 
-	// Binary search for the largest N whose brute force finishes in time
 	int lo = MIN_N, hi = MAX_N, bestN = -1;
 	vector<int> mids;
 
@@ -761,6 +772,10 @@ int main(int argc, char **argv)
 	else
 		printf("\nHighest N for which brute force finished within %.1f s: %d\n", TIME_LIMIT_SEC, bestN);
 
+	// Large instances: separate CSV, never visualized.
+	runLargeBenchmarks();
+
+	// Visualizer only reads search_log.csv (the small brute-force probes).
 	system("python visualize_searchwithlocal.py");
 
 	return 0;
