@@ -187,8 +187,8 @@ def run_real(rows):
 
     with open(os.path.join(script_dir, "p5_results.csv"), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["Dataset", "k", "KMeans Cost", "KMeans Time (ms)",
-                    "Greedy Cost", "Greedy Time (ms)", "Greedy / KMeans Cost"])
+        w.writerow(["Dataset", "k", "Heur Cost", "Heur Time (ms)",
+                    "Greedy Cost", "Greedy Time (ms)", "Greedy / Heur Cost"])
         w.writerows(rows)
 
     sub = [r for r in rows if r[1] == 5 and r[0] not in ("Toy", "Random")]
